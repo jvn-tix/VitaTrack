@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  password    String
+  age         Int
+  createdAt   DateTime @default(now())
+
+  steps       Step[]
+  sleeps      Sleep[]
+  heartRates  HeartRate[]
+  reminders   Reminder[]
+}
+
+model Step {
+  id        String   @id @default(cuid())
+  steps     Int
+  date      DateTime @default(now())
+
+  userId    String
+  user      User @relation(fields: [userId], references: [id])
+}
+
+model Sleep {
+  id          String   @id @default(cuid())
+  hours       Float
+  quality     String
+  date        DateTime @default(now())
+
+  userId      String
+  user        User @relation(fields: [userId], references: [id])
+}
+
+model HeartRate {
+  id          String   @id @default(cuid())
+  bpm         Int
+  date        DateTime @default(now())
+
+  userId      String
+  user        User @relation(fields: [userId], references: [id])
+}
+
+model Reminder {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  reminderAt  DateTime
+  completed   Boolean @default(false)
+
+  userId      String
+  user        User @relation(fields: [userId], references: [id])
+}
