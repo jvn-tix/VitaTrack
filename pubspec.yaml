@@ -36,6 +36,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   pedometer: ^4.2.0
   heart_bpm: ^2.0.0+0
+<<<<<<< HEAD
+=======
+  http: ^1.6.0
+>>>>>>> 6141ad6e (front end with back end)
 
 dev_dependencies:
   flutter_test:

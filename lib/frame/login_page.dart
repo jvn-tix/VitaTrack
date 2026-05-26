@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import 'package:vita_track_2/services/auth_service.dart';
+>>>>>>> 6141ad6e (front end with back end)
 import 'dart:ui'; 
 import 'package:flutter/material.dart';
 import 'package:vita_track_2/dashboard/home_page.dart';
@@ -131,11 +135,28 @@ class _LoginPageState extends State<LoginPage> {
                                 width: double.infinity,
                                 height: 50,
                                 child: ElevatedButton(
+<<<<<<< HEAD
                                   onPressed: () {
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(builder: (context) => const HomePage()),
                                     );
+=======
+                                  onPressed: () async {
+                                    try {
+                                      final result = await AuthService.login(usernameController.text, passwordController.text);
+                                      if (context.mounted) {
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => const HomePage()),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                                      }
+                                    }
+>>>>>>> 6141ad6e (front end with back end)
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
@@ -213,4 +234,12 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+<<<<<<< HEAD
 }
+=======
+}
+
+
+
+
+>>>>>>> 6141ad6e (front end with back end)
