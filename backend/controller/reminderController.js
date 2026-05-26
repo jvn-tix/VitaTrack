@@ -13,6 +13,23 @@ exports.createReminder = async (req, res) => {
 
     res.status(201).json(reminder);
   } catch (error) {
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({
+      message: 'Internal server error'
+    });
+  }};
+
+exports.getReminders = async (req, res) => {
+  try {
+    const reminders = await prisma.reminder.findMany({
+      where: {
+        userId: req.user.userId
+      }
+    });
+
+    res.json(reminders);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Internal server error'
+    });
   }
 };

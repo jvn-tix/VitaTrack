@@ -7,7 +7,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const {
   createReminder,
   getReminders
-} = require('../controllers/reminderController');
+} = require('../controller/reminderController');
 
 router.post('/', authMiddleware, createReminder);
 router.get('/', authMiddleware, getReminders);
