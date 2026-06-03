@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:vita_track_2/frame/login_page.dart';
+import 'package:vita_track_2/services/api_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -106,29 +107,89 @@ class _RegisterPageState extends State<RegisterPage> {
                               const SizedBox(height: 30),
 
                               SizedBox(
-                                width: double.infinity,
-                                height: 50,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => const LoginPage()),
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.blueAccent,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: const Text(
-                                    "Daftar Sekarang",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                ),
-                              ),
+  width: double.infinity,
+  height: 50,
+  child: ElevatedButton(
+    onPressed: () async {
+      String nameInput = nameController.text.trim();
+      String ageInput = ageController.text.trim();
+      String usernameInput = usernameController.text.trim().toLowerCase();
+      String emailInput = gmailController.text.trim(); // menggunakan controller gmail kelompokmu
+      String passwordInput = passwordController.text.trim();
+
+      // 1. Validasi Input Kosong
+      if (nameInput.isEmpty || ageInput.isEmpty || emailInput.isEmpty || usernameInput.isEmpty||passwordInput.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Semua kolom pendaftaran wajib diisi!')),
+        );
+        return;
+      }
+
+      // 2. Konversi Usia ke Angka (Int)
+      int? ageInt = int.tryParse(ageInput);
+      if (ageInt == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Usia harus berupa angka yang valid!')),
+        );
+        return;
+      }
+
+      // 3. Tampilkan Loading Spinner biar keren
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+
+      // 4. TEMBAK KE DATABASE MYSQL VIA API SERVICE
+      bool isRegistered = await ApiService.register(
+        nameInput, 
+        emailInput, 
+        usernameInput,
+        passwordInput, 
+        ageInt
+      );
+
+      if (!context.mounted) return;
+      Navigator.pop(context); // Tutup Loading Spinner
+
+      // 5. Cek Hasil Respon Server
+      if (isRegistered) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registrasi Berhasil! Silakan masuk.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Selesai daftar, baru pindah ke halaman login secara aman
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registrasi Gagal! Periksa koneksi backend atau email mungkin sudah terdaftar.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.blueAccent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      elevation: 0,
+    ),
+    child: const Text(
+      "Daftar Sekarang",
+      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+    ),
+  ),
+),
                             ],
                           ),
                         ),

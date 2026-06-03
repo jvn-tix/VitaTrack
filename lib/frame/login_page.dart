@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:vita_track_2/dashboard/home_page.dart';
 import 'package:vita_track_2/frame/register_page.dart';
+import 'package:vita_track_2/services/api_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -131,12 +132,41 @@ class _LoginPageState extends State<LoginPage> {
                                 width: double.infinity,
                                 height: 50,
                                 child: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => const HomePage()),
+                                  onPressed: () async {
+                                    String usernameInput = usernameController.text.trim(); // Ambil input dari teks box username
+                                    String passwordInput = passwordController.text.trim();
+
+                                    if (usernameInput.isEmpty || passwordInput.isEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Username dan Password tidak boleh kosong')),
+                                      );
+                                      return;
+                                    }
+
+                                    // Tampilkan Loading Spinner
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (context) => const Center(child: CircularProgressIndicator()),
                                     );
-                                  },
+
+                                    // Panggil ApiService dengan input username & password
+                                    bool isSuccess = await ApiService.login(usernameInput, passwordInput);
+                                    
+                                    if (!mounted) return;
+                                    Navigator.pop(context); // Menutup Loading Spinner
+
+                                    if (isSuccess) {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => const HomePage()),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Login Gagal! Email atau Password salah.')),
+                                      );
+                                    }
+                                },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     foregroundColor: Colors.blueAccent,

@@ -7,6 +7,7 @@ exports.register = async (req, res) => {
     const {
       name,
       email,
+      username,
       password,
       age
     } = req.body;
@@ -15,9 +16,19 @@ exports.register = async (req, res) => {
       where: { email }
     });
 
+    const existingUsername = await prisma.user.findUnique({
+      where: { username: username.toLowerCase() }
+    });
+
     if (existingUser) {
       return res.status(400).json({
         message: 'Email already exists'
+      });
+    }
+
+    if (existingUsername) {
+      return res.status(400).json({
+        message: 'Username sudah digunakan'
       });
     }
 
@@ -26,6 +37,7 @@ exports.register = async (req, res) => {
       data: {
         name,
         email,
+        username: username.toLowerCase(),
         password: hashedPassword,
         age
       }
@@ -47,12 +59,12 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const {
-      email,
+      username,
       password
     } = req.body;
 
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { username: username.toLowerCase() }
     });
 
     if (!user) {
@@ -89,5 +101,33 @@ exports.login = async (req, res) => {
     res.status(500).json({
       message: 'Internal server error'
     });
+  }
+};
+
+exports.getProfile = async (req, res) => {
+  try {
+    // req.user didapat dari token yang di-decode oleh authMiddleware
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId }, // Menyesuaikan userId dari payload token Anda
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        username: true,
+        age: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User tidak ditemukan' });
+    }
+
+    res.json({
+      message: 'Fetch profile success',
+      user
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };

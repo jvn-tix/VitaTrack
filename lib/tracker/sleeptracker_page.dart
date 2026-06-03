@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:vita_track_2/services/api_service.dart';
 
 class SleepTrackerDetail extends StatefulWidget {
-  const SleepTrackerDetail({super.key});
+  final int currentSleep;                       
+  final ValueChanged<int> onSleepChanged;
+
+  const SleepTrackerDetail({super.key, required this.currentSleep, required this.onSleepChanged});
 
   @override
   State<SleepTrackerDetail> createState() => _SleepTrackerDetailState();
@@ -17,10 +21,10 @@ class _SleepTrackerDetailState extends State<SleepTrackerDetail> {
   bool _isScanning = false;
   String _connectedDeviceName = "";
 
-  String _deepSleepTime = "2j 00m";
-  String _lightSleepTime = "4j 20m";
-  String _remSleepTime = "1j 00m";
-  String _awakeCount = "1 kali";
+  String _deepSleepTime = "0j 00m";
+  String _lightSleepTime = "0j 00m";
+  String _remSleepTime = "0j 00m";
+  String _awakeCount = "0 kali";
 
   final List<Map<String, String>> _dummyDevices = [
     {"name": "Galaxy Watch 6 Mini", "mac": "7A:9B:C1:23:D4:E5"},
@@ -103,31 +107,82 @@ class _SleepTrackerDetailState extends State<SleepTrackerDetail> {
     );
   }
 
-  void _connectToDeviceMock(String deviceName) {
+  void _connectToDeviceMock(String deviceName) async{
+    // 1. Deklarasikan variabel penampung data simulasi
+    double simulatedHours;
+    String dbQuality;
+    
+    String durationText;
+    int score;
+    String qualityText;
+    String deepText;
+    String lightText;
+    String remText;
+    String awakeText;
+
+    // 2. Percabangan Kondisi Perangkat untuk Demo
+    if (deviceName == "Galaxy Watch 6 Mini" || deviceName == "Apple Watch Series 9") {
+      // KONDISI A: TIDUR CUKUP (Memenuhi Target harian 8 Jam)
+      simulatedHours = 7.75; // 7 jam 45 menit (Dibulatkan .round() jadi 8 di HomePage)
+      dbQuality = "Good";
+      
+      durationText = "7j 45m";
+      score = 88;
+      qualityText = "Sangat Baik";
+      deepText = "2j 15m";
+      lightText = "4j 30m";
+      remText = "1j 00m";
+      awakeText = "0 kali";
+    } else {
+      // KONDISI B: KURANG TIDUR (Di bawah Target - Contoh: Mi Band atau Garmin)
+      simulatedHours = 4.5; // 4 jam 30 menit (Dibulatkan .round() jadi 5 di HomePage)
+      dbQuality = "Poor";
+      
+      durationText = "4j 30m";
+      score = 45;
+      qualityText = "Kurang Istirahat";
+      deepText = "0j 45m";
+      lightText = "3j 15m";
+      remText = "0j 30m";
+      awakeText = "3 kali";
+    }
+
     setState(() {
       _isConnected = true;
       _connectedDeviceName = deviceName;
       
-      _sleepDuration = "7j 45m";
-      _sleepScore = 88;
-      _sleepQuality = "Sangat Baik";
+      _sleepDuration = durationText;
+      _sleepScore = score;
+      _sleepQuality = qualityText;
       
-      _deepSleepTime = "2j 15m";
-      _lightSleepTime = "4j 30m";
-      _remSleepTime = "1j 00m";
-      _awakeCount = "0 kali";
+      _deepSleepTime = deepText;
+      _lightSleepTime = lightText;
+      _remSleepTime = remText;
+      _awakeCount = awakeText;
     });
+
+    bool isSaved = await ApiService.sendSleepData(simulatedHours, dbQuality);
+    if (isSaved) {
+      print("Berhasil menyimpan data tidur ke MySQL.");
+    }
+
+    widget.onSleepChanged(simulatedHours.round());
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle, color: Colors.white),
+            Icon(
+              simulatedHours >= 7 ? Icons.check_circle : Icons.warning_amber_rounded, 
+              color: Colors.white,
+            ),
             const SizedBox(width: 10),
-            Text("Berhasil sinkronisasi data tidur dari $deviceName!"),
+            Expanded(
+              child: Text("Data sinkron dari $deviceName! (${simulatedHours >= 7 ? 'Tidur Cukup' : 'Kurang Tidur'})"),
+            ),
           ],
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: simulatedHours >= 7 ? Colors.green : Colors.orange,
         duration: const Duration(seconds: 3),
       ),
     );
@@ -138,15 +193,17 @@ class _SleepTrackerDetailState extends State<SleepTrackerDetail> {
       _isConnected = false;
       _connectedDeviceName = "";
       
-      _sleepDuration = "7j 20m";
-      _sleepScore = 82;
-      _sleepQuality = "Baik";
+      _sleepDuration = "0j 00m";
+      _sleepScore = 0;
+      _sleepQuality = "-";
       
-      _deepSleepTime = "2j 00m";
-      _lightSleepTime = "4j 20m";
-      _remSleepTime = "1j 00m";
-      _awakeCount = "1 kali";
+      _deepSleepTime = "0j 00m";
+      _lightSleepTime = "0j 00m";
+      _remSleepTime = "0j 00m";
+      _awakeCount = "0 kali";
     });
+
+    widget.onSleepChanged(0);
   }
 
   @override
@@ -292,20 +349,30 @@ class _SleepTrackerDetailState extends State<SleepTrackerDetail> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.indigo.withOpacity(0.04),
+            // Warna background container berubah agak orange jika skor tidur rendah
+            color: _isConnected 
+                ? (_sleepScore >= 70 ? Colors.indigo.withOpacity(0.04) : Colors.orange.withOpacity(0.05))
+                : Colors.indigo.withOpacity(0.04),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 "Rekomendasi Istirahat",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.indigo),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold, 
+                  fontSize: 13, 
+                  // Judul teks berubah orange jika kurang tidur
+                  color: _isConnected && _sleepScore < 70 ? Colors.orange[800] : Colors.indigo,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 _isConnected 
-                    ? "Tidurmu sangat berkualitas menggunakan $_connectedDeviceName. Pertahankan ritme tidur ini." 
+                    ? (_sleepScore >= 70 
+                        ? "Tidurmu sangat berkualitas menggunakan $_connectedDeviceName. Pertahankan ritme tidur ini." 
+                        : "Durasi tidurmu kurang dari target harian. Kurangi begadang dan cobalah untuk tidur lebih awal malam ini.")
                     : "Jadwal tidur kamu sudah konsisten. Pertahankan jam tidur yang sama malam ini untuk menjaga kebugaran tubuh.",
                 style: TextStyle(fontSize: 12, color: Colors.grey[700], height: 1.3),
               ),

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:pedometer/pedometer.dart';
+import 'package:vita_track_2/services/api_service.dart';
 
 class StepTrackerDetail extends StatefulWidget {
-  const StepTrackerDetail({super.key});
+  final int currentSteps;
+  final int targetSteps;
+  final ValueChanged<int> onStepsChanged;
+  const StepTrackerDetail({super.key, required this.currentSteps, required this.targetSteps, required this.onStepsChanged});
 
   @override
   State<StepTrackerDetail> createState() => _StepTrackerDetailState();
@@ -11,12 +15,12 @@ class StepTrackerDetail extends StatefulWidget {
 class _StepTrackerDetailState extends State<StepTrackerDetail> {
   late Stream<StepCount> _stepCountStream;
   
-  int _currentSteps = 0; 
-  int _targetSteps = 10000; 
+  int _previousSteps = 0; 
 
   @override
   void initState() {
     super.initState();
+    _fetchLastStepFromDatabase();
     _initPedometer();
   }
 
@@ -28,17 +32,39 @@ class _StepTrackerDetailState extends State<StepTrackerDetail> {
     );
   }
 
+  Future<void> _fetchLastStepFromDatabase() async {
+    try {
+      // Skenarionya: Panggil fungsi di ApiService kelompokmu
+      // Misal fungsi tersebut mengembalikan data langkah terakhir dalam bentuk integer
+      int lastStep = await ApiService.getLastStepData(); // <--- Sesuaikan dengan fungsi di api_service.dart
+      
+      setState(() {
+        _previousSteps = lastStep;
+      });
+    } catch (e) {
+      print("Gagal mengambil data langkah terakhir: $e");
+      setState(() {
+        _previousSteps = 6240; // Default fallback jika API belum siap / error
+      });
+    }
+  }
+
   void _onStepCount(StepCount event) {
-    setState(() {
-      _currentSteps = event.steps > 0 ? event.steps : 6240; 
-    });
+    int steps = event.steps > 0 ? event.steps : 0;
+    widget.onStepsChanged(steps); // <--- KIRIM UPDATE KE HOMEPAGE
+    ApiService.sendSteps(steps);
   }
 
   void _onStepCountError(error) {
     print("Gagal mengakses sensor pedometer: $error");
-    setState(() {
-      _currentSteps = 6240; 
-    });
+    widget.onStepsChanged(0); // Reset ke 0 jika sensor error
+  }
+
+  // FUNGSI SIMULASI JALAN KHUSUS DEMO DOSEN
+  void _simulateStepWalk() {
+    int newSteps = widget.currentSteps + 500; 
+    widget.onStepsChanged(newSteps); 
+    ApiService.sendSteps(newSteps); 
   }
 
   double _calculateDistance(int steps) {
@@ -51,9 +77,9 @@ class _StepTrackerDetailState extends State<StepTrackerDetail> {
 
   @override
   Widget build(BuildContext context) {
-    double distance = _calculateDistance(_currentSteps);
-    int calories = _calculateCalories(_currentSteps);
-    double progressPercent = (_currentSteps / _targetSteps).clamp(0.0, 1.0);
+    double distance = _calculateDistance(widget.currentSteps);
+    int calories = _calculateCalories(widget.currentSteps);
+    double progressPercent = (widget.currentSteps / widget.targetSteps).clamp(0.0, 1.0);
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 25),
@@ -67,7 +93,7 @@ class _StepTrackerDetailState extends State<StepTrackerDetail> {
               ),
               const SizedBox(height: 5),
               Text(
-                "$_currentSteps",
+                "${widget.currentSteps}",
                 style: const TextStyle(
                   fontSize: 56, 
                   fontWeight: FontWeight.w900, 
@@ -76,7 +102,7 @@ class _StepTrackerDetailState extends State<StepTrackerDetail> {
                 ),
               ),
               Text(
-                "dari target $_targetSteps langkah",
+                "dari target ${widget.targetSteps} langkah",
                 style: TextStyle(color: Colors.grey[600], fontSize: 13, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 15),
@@ -89,6 +115,36 @@ class _StepTrackerDetailState extends State<StepTrackerDetail> {
                   valueColor: const AlwaysStoppedAnimation<Color>(Colors.orange),
                 ),
               ),
+              const SizedBox(height: 25),
+
+                // === SELEP KODE KOTAK INI ===
+                Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.blue.withOpacity(0.15)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.cloud_done_rounded, color: Color(0xFF1E88E5), size: 22),
+                          const SizedBox(width: 10),
+                          Text(
+                            "Langkah Sesi Sebelumnya :",
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey[700]),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        "$_previousSteps",
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),
@@ -143,13 +199,29 @@ class _StepTrackerDetailState extends State<StepTrackerDetail> {
             children: [
               _buildBarGraph("06:00", 0.2),
               _buildBarGraph("09:00", 0.5),
-              _buildBarGraph("12:00", 0.8),
+              _buildBarGraph("12:00", progressPercent),
               _buildBarGraph("15:00", 0.4),
               _buildBarGraph("18:00", 0.6),
               _buildBarGraph("21:00", 0.1),
             ],
           ),
         ),
+        const SizedBox(height: 25),
+
+            // === SELEP KODE TOMBOL INI ===
+            ElevatedButton.icon(
+              onPressed: _simulateStepWalk,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E88E5),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 1,
+              ),
+              icon: const Icon(Icons.add_circle_outline_rounded),
+              label: const Text("Simulasi +500 Langkah (Demo)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            ),
+
         const SizedBox(height: 30),
 
         Container(

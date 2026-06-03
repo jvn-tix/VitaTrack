@@ -11,14 +11,37 @@ model User {
   id          String   @id @default(cuid())
   name        String
   email       String   @unique
+  username    String   @unique
   password    String
   age         Int
   createdAt   DateTime @default(now())
 
+  foodLogs    FoodLog[]
   steps       Step[]
   sleeps      Sleep[]
   heartRates  HeartRate[]
   reminders   Reminder[]
+}
+
+model FoodMaster {
+  id        String   @id @default(cuid())
+  title     String   
+  kcal      Int      
+  tag       String   
+  createdAt DateTime @default(now())
+}
+
+model FoodLog {
+  id        String   @id @default(cuid())
+  title     String   
+  kcal      Int      
+  time      String   
+  tag       String   
+  date      DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
 }
 
 model Step {
