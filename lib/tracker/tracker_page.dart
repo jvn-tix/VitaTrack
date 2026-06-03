@@ -7,7 +7,14 @@ import 'steptracker_page.dart';
 enum TrackerView { menuUtama, langkahDetail, jantungDetail, tidurDetail }
 
 class TrackerPage extends StatefulWidget {
-  const TrackerPage({super.key});
+  final int currentSteps;                                
+  final int targetSteps;
+  final int currentBPM;
+  final int currentSleep;
+  final ValueChanged<int> onStepsChanged;
+  final ValueChanged<int> onBPMChanged;             
+  final ValueChanged<int> onSleepChanged;
+  const TrackerPage({super.key, required this.currentSteps, required this.targetSteps, required this.currentBPM, required this.currentSleep ,required this.onStepsChanged, required this.onBPMChanged, required this.onSleepChanged}); 
 
   @override
   State<TrackerPage> createState() => _TrackerPageState();
@@ -15,46 +22,36 @@ class TrackerPage extends StatefulWidget {
 
 class _TrackerPageState extends State<TrackerPage> {
   final Color primaryColor = const Color(0xFF1E88E5);
-
-
   TrackerView _currentView = TrackerView.menuUtama;
 
-  int _todaySteps = 6240; 
-  int _currentBPM = 72;
-  String _sleepDuration = "7 j 20 m";
 
   @override
   Widget build(BuildContext context) {
+
+    bool isMenuUtama = _currentView == TrackerView.menuUtama;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F9FC),
       
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        elevation: 0,
-        automaticallyImplyLeading: false, 
-        leading: _currentView != TrackerView.menuUtama
-            ? IconButton(
+      appBar: isMenuUtama
+          ? null 
+          : AppBar(
+              backgroundColor: primaryColor,
+              elevation: 0,
+              automaticallyImplyLeading: false,
+              leading: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
                 onPressed: () {
                   setState(() {
-                    _currentView = TrackerView.menuUtama; 
+                    _currentView = TrackerView.menuUtama;
                   });
                 },
-              )
-            : null,
-        title: Text(
-          _getAppBarTitle(),
-          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.white, size: 26),
-            onPressed: () {
-            },
-          ),
-          const SizedBox(width: 10),
-        ],
-      ),
+              ),
+              title: Text(
+                _getAppBarTitle(),
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ),
       
       body: _buildCurrentBody(),
     );
@@ -106,7 +103,7 @@ class _TrackerPageState extends State<TrackerPage> {
         _buildModernRowCard(
           title: "Step Tracker",
           subtitle: "Aktivitas Hari Ini",
-          valueText: "$_todaySteps",
+          valueText: "${widget.currentSteps}",
           unitText: " langkah",
           icon: Icons.directions_walk_rounded,
           baseColor: Colors.orange,
@@ -121,7 +118,7 @@ class _TrackerPageState extends State<TrackerPage> {
         _buildModernRowCard(
           title: "Heart Rate Tracker",
           subtitle: "Detak Jantung",
-          valueText: "$_currentBPM",
+          valueText: "${widget.currentBPM}",
           unitText: " bpm",
           icon: Icons.favorite_rounded,
           baseColor: Colors.redAccent,
@@ -136,7 +133,7 @@ class _TrackerPageState extends State<TrackerPage> {
         _buildModernRowCard(
           title: "Sleep Tracker",
           subtitle: "Durasi Istirahat",
-          valueText: _sleepDuration,
+          valueText: "${widget.currentSleep}",
           unitText: "",
           icon: Icons.nights_stay_rounded,
           baseColor: Colors.indigo,
@@ -228,14 +225,14 @@ class _TrackerPageState extends State<TrackerPage> {
   }
 
   Widget _buildStepDetailContent() {
-    return const StepTrackerDetail();
+    return StepTrackerDetail(currentSteps: widget.currentSteps, targetSteps: widget.targetSteps, onStepsChanged: widget.onStepsChanged,);
   }
 
   Widget _buildHeartDetailContent() {
-    return const HeartRateDetail();
+    return HeartRateDetail(currentBPM: widget.currentBPM, onBPMChanged: widget.onBPMChanged);
   }
 
   Widget _buildSleepDetailContent() {
-    return const SleepTrackerDetail();
+    return SleepTrackerDetail(currentSleep: widget.currentSleep,onSleepChanged: widget.onSleepChanged,);
   }
 }

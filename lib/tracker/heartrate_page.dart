@@ -1,16 +1,23 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:vita_track_2/services/api_service.dart';
 
 class HeartRateDetail extends StatefulWidget {
-  const HeartRateDetail({super.key});
+  final int currentBPM; // <--- TAMBAHKAN BARIS INI
+  final ValueChanged<int> onBPMChanged; // <--- TAMBAHKAN BARIS INI
+
+  const HeartRateDetail({
+    super.key,
+    required this.currentBPM, // <--- TAMBAHKAN BARIS INI
+    required this.onBPMChanged, // <--- TAMBAHKAN BARIS INI
+  });
 
   @override
   State<HeartRateDetail> createState() => _HeartRateDetailState();
 }
 
 class _HeartRateDetailState extends State<HeartRateDetail> {
-  int _currentBPM = 0;
   final List<int> _bpmHistory = [68, 72, 75, 70, 69, 71];
   
   bool _isConnected = false;
@@ -111,32 +118,54 @@ class _HeartRateDetailState extends State<HeartRateDetail> {
     });
 
     _liveDataTimer?.cancel();
-    _liveDataTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+    _liveDataTimer = Timer.periodic(const Duration(seconds: 4), (timer) async {
       if (!mounted) return;
       final random = Random();
-      int simulatedLiveBPM = 68 + random.nextInt(21);
+      
+      // LOGIKA VARIASI DATA UNTUK TRIK DEMO SEPERTI YANG KITA BAHAS
+      int simulatedLiveBPM = 72;
+      if (deviceName.contains("Galaxy Watch")) {
+        simulatedLiveBPM = 65 + random.nextInt(15); // Range rileks: 65 - 80 BPM
+      } else if (deviceName.contains("Mi Smart Band")) {
+        simulatedLiveBPM = 92 + random.nextInt(20); // Range olahraga ringan: 92 - 112 BPM
+      } else {
+        simulatedLiveBPM = 70 + random.nextInt(21); // Default range: 70 - 91 BPM
+      }
 
-      setState(() {
-        _currentBPM = simulatedLiveBPM;
+      // 1. Kirim data ke database terlebih dahulu menggunakan variabel lokal langsung (pasti akurat)
+      bool isSaved = await ApiService.sendHeartRateData(simulatedLiveBPM);
+      
+      if (isSaved) {
+        print("Berhasil menyimpan $simulatedLiveBPM BPM ke database MySQL!");
+      } else {
+        print("Gagal menyimpan data ke backend. Periksa log terminal backend Anda!");
+      }
 
-        if (random.nextInt(5) == 2) { 
-          _bpmHistory.add(_currentBPM);
+      // 2. Lakukan pembaruan UI jika widget masih terpasang (mounted)
+      if (mounted) {
+        // Beritahu parent widget mengenai perubahan nilai detak jantung terbaru
+        widget.onBPMChanged(simulatedLiveBPM);
+        
+        setState(() {
+          // Ganti 'widget.currentBPM' dengan variabel lokal 'simulatedLiveBPM'
+          _bpmHistory.add(simulatedLiveBPM); 
+          
           if (_bpmHistory.length > 6) _bpmHistory.removeAt(0);
           
           _lowestBPM = _bpmHistory.reduce(min);
           _highestBPM = _bpmHistory.reduce(max);
           _averageBPM = (_bpmHistory.reduce((a, b) => a + b) / _bpmHistory.length).round();
-        }
-      });
+        });
+      }
     });
   }
 
   void _disconnectDevice() {
     _liveDataTimer?.cancel();
+    widget.onBPMChanged(72);
     setState(() {
       _isConnected = false;
       _isLiveTracking = false;
-      _currentBPM = 0;
       _connectedDeviceName = "";
     });
   }
@@ -213,7 +242,7 @@ class _HeartRateDetailState extends State<HeartRateDetail> {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    _currentBPM == 0 ? "--" : "$_currentBPM",
+                   widget.currentBPM == 0 ? "--" : "${widget.currentBPM}",
                     style: const TextStyle(fontSize: 64, fontWeight: FontWeight.w900, color: Color(0xFF1E88E5)),
                   ),
                   const Text(" bpm", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black54)),

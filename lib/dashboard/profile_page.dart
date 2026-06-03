@@ -1,52 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:vita_track_2/dashboard/reminder_page.dart';
+import 'package:vita_track_2/frame/login_page.dart';
+import 'package:vita_track_2/services/api_service.dart';
 
-class ProfileInfo {
-  final String name;
-  final String age;
-  final String email;
+class ProfilePage extends StatefulWidget {
+
   final int targetCalories;
   final int targetSteps;
   final int targetSleep;
 
-  const ProfileInfo({
-    required this.name,
-    required this.age,
-    required this.email,
+  final Map<String, dynamic> userProfileData;
+  final ValueChanged<Map<String, dynamic>> onProfileChanged;
+
+  final Function(int, int, int) onTargetChanged;
+
+  const ProfilePage({
+    super.key,
+    required this.userProfileData,  // Sesuaikan nama parameter
+    required this.onProfileChanged,
     required this.targetCalories,
     required this.targetSteps,
     required this.targetSleep,
+    required this.onTargetChanged,
   });
-
-  ProfileInfo copyWith({
-    String? name,
-    String? age,
-    String? email,
-    int? targetCalories,
-    int? targetSteps,
-    int? targetSleep,
-  }) {
-    return ProfileInfo(
-      name: name ?? this.name,
-      age: age ?? this.age,
-      email: email ?? this.email,
-      targetCalories: targetCalories ?? this.targetCalories,
-      targetSteps: targetSteps ?? this.targetSteps,
-      targetSleep: targetSleep ?? this.targetSleep,
-    );
-  }
-}
-
-class ProfilePage extends StatefulWidget {
-  const ProfilePage({
-    super.key,
-    required this.profileInfo,
-    required this.onProfileChanged,
-  });
-
-  final ProfileInfo profileInfo;
-  final ValueChanged<ProfileInfo> onProfileChanged;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -54,11 +31,24 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   bool _isLoading = true;
+  late Map<String, dynamic> _localUserData;
 
   @override
   void initState() {
     super.initState();
+    _localUserData = widget.userProfileData; // Inisialisasi data lokal dengan data dari widget
     _loadProfile();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProfilePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Jika data dari HomePage berubah setelah selesai ditarik dari API DB
+    if (widget.userProfileData != oldWidget.userProfileData) {
+      setState(() {
+        _localUserData = widget.userProfileData;
+      });
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -67,6 +57,17 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {
       _isLoading = false;
     });
+  }
+
+  void _handleLogout() async {
+    await ApiService.logout(); // Hapus token di shared preferences
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+        (route) => false,
+      );
+    }
   }
 
   @override
@@ -124,12 +125,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      widget.profileInfo.name,
+                      _localUserData['name'] ?? _localUserData['name'] ?? 'No Name',
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.profileInfo.email,
+                      _localUserData['email'] ?? 'No Email',
                       style: const TextStyle(fontSize: 14, color: Colors.black54),
                     ),
                   ],
@@ -161,11 +162,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                _buildInfoRow('Nama', widget.profileInfo.name),
+                _buildInfoRow('Nama', _localUserData['name'] ?? _localUserData['name'] ?? '-'),
                 const Divider(color: Color(0xFFE5E7EB), height: 24, thickness: 1),
-                _buildInfoRow('Usia', widget.profileInfo.age),
+                _buildInfoRow('Usia', _localUserData['age'] != null ? '${_localUserData['age']} Tahun' : '-'),
                 const Divider(color: Color(0xFFE5E7EB), height: 24, thickness: 1),
-                _buildInfoRow('Email', widget.profileInfo.email),
+                _buildInfoRow('Email', _localUserData['email'] ?? _localUserData['email'] ?? '-'),
               ],
             ),
           ),
@@ -192,11 +193,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                _buildTargetItem('Kalori', '${widget.profileInfo.targetCalories} kcal'),
+                _buildTargetItem('Kalori', '${widget.targetCalories} kcal'),
                 const Divider(color: Color(0xFFE5E7EB)),
-                _buildTargetItem('Langkah kaki', '${widget.profileInfo.targetSteps} langkah'),
+                _buildTargetItem('Langkah kaki', '${widget.targetSteps} langkah'),
                 const Divider(color: Color(0xFFE5E7EB)),
-                _buildTargetItem('Durasi tidur', '${widget.profileInfo.targetSleep} jam'),
+                _buildTargetItem('Durasi tidur', '${widget.targetSleep} jam'),
                 const Divider(color: Color(0xFFE5E7EB)),
               ],
             ),
@@ -222,6 +223,25 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           const SizedBox(height: 30),
+
+          Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: ElevatedButton.icon(
+                      onPressed: _handleLogout, // Memanggil fungsi logout
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                      icon: const Icon(Icons.logout, color: Colors.white),
+                      label: const Text(
+                        'Keluar / Logout',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    ),
+                  ),
         ],
       ),
     );
@@ -252,9 +272,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _showEditTargetDialog() async {
-    final caloriesController = TextEditingController(text: widget.profileInfo.targetCalories.toString());
-    final stepsController = TextEditingController(text: widget.profileInfo.targetSteps.toString());
-    final sleepController = TextEditingController(text: widget.profileInfo.targetSleep.toString());
+    final caloriesController = TextEditingController(text: (widget.targetCalories).toString());
+    final stepsController = TextEditingController(text: (widget.targetSteps).toString());
+    final sleepController = TextEditingController(text: (widget.targetSleep).toString());
 
     await showDialog<void>(
       context: context,
@@ -297,6 +317,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
           ),
+          
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -304,12 +325,20 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             ElevatedButton(
               onPressed: () {
-                final updatedInfo = widget.profileInfo.copyWith(
-                  targetCalories: int.tryParse(caloriesController.text) ?? widget.profileInfo.targetCalories,
-                  targetSteps: int.tryParse(stepsController.text) ?? widget.profileInfo.targetSteps,
-                  targetSleep: int.tryParse(sleepController.text) ?? widget.profileInfo.targetSleep,
-                );
-                widget.onProfileChanged(updatedInfo);
+                int newCal = int.tryParse(caloriesController.text) ?? widget.targetCalories;
+                int newSteps = int.tryParse(stepsController.text) ?? widget.targetSteps;
+                int newSleep = int.tryParse(sleepController.text) ?? widget.targetSleep;
+                
+                widget.onTargetChanged(newCal, newSteps, newSleep);
+
+                final updatedMap = {
+                  ..._localUserData,
+                  'targetCalories': newCal,
+                  'targetSteps': newSteps,
+                  'targetSleep': newSleep,
+                };
+
+                widget.onProfileChanged(updatedMap);
                 Navigator.of(context).pop();
               },
               child: const Text('Simpan'),
@@ -321,9 +350,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _showEditProfileDialog() async {
-    final nameController = TextEditingController(text: widget.profileInfo.name);
-    final ageController = TextEditingController(text: widget.profileInfo.age);
-    final emailController = TextEditingController(text: widget.profileInfo.email);
+    final nameController = TextEditingController(text: _localUserData['name'] ?? 'No Name');
+    final ageController = TextEditingController(text: (_localUserData['age'] ?? '').toString());
+    final emailController = TextEditingController(text: _localUserData['email'] ?? 'No Email');
 
     await showDialog<void>(
       context: context,
@@ -361,11 +390,12 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             ElevatedButton(
               onPressed: () {
-                final updatedInfo = widget.profileInfo.copyWith(
-                  name: nameController.text.isNotEmpty ? nameController.text : widget.profileInfo.name,
-                  age: ageController.text.isNotEmpty ? ageController.text : widget.profileInfo.age,
-                  email: emailController.text.isNotEmpty ? emailController.text : widget.profileInfo.email,
-                );
+                final updatedInfo = {
+                  ..._localUserData,
+                  'name': nameController.text.isNotEmpty ? nameController.text : _localUserData['name'],
+                  'age': ageController.text.isNotEmpty ? int.tryParse(ageController.text) ?? _localUserData['age'] : _localUserData['age'],
+                  'email': emailController.text.isNotEmpty ? emailController.text : _localUserData['email'],
+                };
                 widget.onProfileChanged(updatedInfo);
                 Navigator.of(context).pop();
               },
