@@ -200,26 +200,39 @@ class _HomePageState extends State<HomePage> {
         children: [
           // ================= HEADER: SALAM & PROFIL DINA MIS =================
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Halo, ${_userProfileData?['name'] ?? _userProfileData?['username'] ?? 'User'}! 👋',
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E1E2E)),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Yuk, pantau kesehatanmu hari ini!',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Halo, ${_userProfileData?['name'] ?? _userProfileData?['username'] ?? 'User'}! 👋',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E1E2E),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Yuk, pantau kesehatanmu hari ini!',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+
+              const SizedBox(width: 12),
+
               CircleAvatar(
                 radius: 25,
-                backgroundColor: const Color(0xFF1E88E5).withOpacity(0.1),
-                child: const Icon(Icons.person, color: Color(0xFF1E88E5), size: 30),
+                backgroundColor: Color(0xFF1E88E5),
+                child: Icon(Icons.person),
               ),
             ],
           ),

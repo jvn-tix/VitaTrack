@@ -205,24 +205,24 @@ class _ProfilePageState extends State<ProfilePage> {
 
           const SizedBox(height: 20),
 
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30),
-            child: OutlinedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ReminderPage()),
-                );
-              },
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFF3B82F6)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                minimumSize: const Size(double.infinity, 45),
-              ),
-              child: const Text('Reminder', style: TextStyle(color: Color(0xFF3B82F6))),
-            ),
-          ),
-          const SizedBox(height: 30),
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(horizontal: 30),
+          //   child: OutlinedButton(
+          //     onPressed: () {
+          //       Navigator.push(
+          //         context,
+          //         MaterialPageRoute(builder: (context) => const ReminderPage()),
+          //       );
+          //     },
+          //     style: OutlinedButton.styleFrom(
+          //       side: const BorderSide(color: Color(0xFF3B82F6)),
+          //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          //       minimumSize: const Size(double.infinity, 45),
+          //     ),
+          //     child: const Text('Reminder', style: TextStyle(color: Color(0xFF3B82F6))),
+          //   ),
+          // ),
+          // const SizedBox(height: 30),
 
           Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
