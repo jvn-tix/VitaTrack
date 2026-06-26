@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vita_track_2/services/api_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class FoodLogManualPage extends StatefulWidget {
   final ValueChanged<int>? onTotalCaloriesChanged;
@@ -22,6 +24,7 @@ class _FoodLogManualPageState extends State<FoodLogManualPage> {
 
   bool _isScanning = false;
   bool _isLoadingMaster = true;
+  File? _pickedImage;
 
   @override
   void initState() {
@@ -133,7 +136,20 @@ class _FoodLogManualPageState extends State<FoodLogManualPage> {
     });
   }
 
-  void _simulateImageScan() async {
+  Future<void> _pickImageFromGallery() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (image != null) {
+      setState(() {
+        _pickedImage = File(image.path);
+      });
+      // Jalankan scan setelah gambar dipilih
+      await _simulateImageScan();
+    }
+  }
+
+  Future<void> _simulateImageScan() async {
     setState(() {
       _isScanning = true;
       scannedResults.clear();
@@ -310,29 +326,75 @@ class _FoodLogManualPageState extends State<FoodLogManualPage> {
     padding: const EdgeInsets.all(20),
     children: [
       GestureDetector(
-          onTap: _isScanning ? null : _simulateImageScan,
+          onTap: _isScanning ? null : _pickImageFromGallery,
           child: Container(
-            height: 180,
+            height: _pickedImage != null ? 250 : 180,
             decoration: BoxDecoration(
               color: const Color(0xFFF0F7FF),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: primaryColor.withOpacity(0.3), width: 1.5),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  _isScanning ? Icons.sync_rounded : Icons.cloud_upload_outlined, 
-                  size: 45, 
-                  color: primaryColor
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _isScanning ? "sedang memindai gambar..." : "unggah gambar untuk scan", 
-                  style: TextStyle(color: primaryColor, decoration: TextDecoration.underline, fontWeight: FontWeight.w500)
-                ),
-              ],
-            ),
+            child: _pickedImage != null
+                ? Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Image.file(
+                        _pickedImage!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
+                      Container(
+                        color: Colors.black.withOpacity(0.3),
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: CircleAvatar(
+                          backgroundColor: Colors.white,
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.red, size: 20),
+                            onPressed: () {
+                              setState(() => _pickedImage = null);
+                              setState(() => scannedResults.clear());
+                            },
+                          ),
+                        ),
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _isScanning ? Icons.sync_rounded : Icons.check_circle, 
+                            size: 45, 
+                            color: Colors.white
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _isScanning ? "sedang memindai gambar..." : "Gambar dipilih. Ketuk untuk ganti", 
+                            style: const TextStyle(color: Colors.white, decoration: TextDecoration.underline, fontWeight: FontWeight.w500)
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _isScanning ? Icons.sync_rounded : Icons.cloud_upload_outlined, 
+                        size: 45, 
+                        color: primaryColor
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _isScanning ? "sedang memindai gambar..." : "unggah gambar untuk scan", 
+                        style: TextStyle(color: primaryColor, decoration: TextDecoration.underline, fontWeight: FontWeight.w500)
+                      ),
+                    ],
+                  ),
           ),
         ),
         const SizedBox(height: 25),
@@ -562,19 +624,7 @@ Widget _buildScanResultItem(String title, String porsi, int kcal, String tag, Co
     );
   }
 
-  Widget _buildLegendRow(Color color, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(radius: 5, backgroundColor: color),
-          const SizedBox(width: 10),
-          Text(text, style: const TextStyle(fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildMacroBar(String label, double val, String amount, Color color) {
     return Padding(

@@ -174,7 +174,7 @@ class _StepTrackerDetailState extends State<StepTrackerDetail> {
         const SizedBox(height: 35),
 
         const Text(
-          "LANGKAH PER JAM",
+          "LANGKAH PER HARI",
           style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.black87, letterSpacing: 0.5),
         ),
         const SizedBox(height: 15),
@@ -197,12 +197,13 @@ class _StepTrackerDetailState extends State<StepTrackerDetail> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _buildBarGraph("06:00", 0.2),
-              _buildBarGraph("09:00", 0.5),
-              _buildBarGraph("12:00", progressPercent),
-              _buildBarGraph("15:00", 0.4),
-              _buildBarGraph("18:00", 0.6),
-              _buildBarGraph("21:00", 0.1),
+              _buildBarGraph("Senin", 0.2),
+              _buildBarGraph("Selasa", 0.5),
+              _buildBarGraph("Rabu", progressPercent),
+              _buildBarGraph("Kamis", 0.4),
+              _buildBarGraph("Jumat", 0.6),
+              _buildBarGraph("Sabtu", 0.1),
+              _buildBarGraph("Minggu", 0.3),
             ],
           ),
         ),
